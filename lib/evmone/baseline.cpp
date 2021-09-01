@@ -99,6 +99,15 @@ template <>
     return status;
 }
 
+template <>
+[[gnu::always_inline]] inline evmc_status_code invoke<decltype(&stop)>(
+    decltype(&stop) instr_fn, ExecutionState& state) noexcept
+{
+    const auto token = instr_fn(state);
+    state.status = token.status;
+    return EVMC_FAILURE;  // Terminate loop with any code other than SUCCESS.
+}
+
 #define INSTR_IMPL(OPCODE)                                \
     case OPCODE:                                          \
         if (invoke(op2fn::OPCODE, state) != EVMC_SUCCESS) \
@@ -714,9 +723,9 @@ evmc_result execute(const VM& vm, ExecutionState& state, const CodeAnalysis& ana
             }
             DISPATCH_NEXT();
         }
-        case OP_RETURN:
-            state.status = return_<EVMC_SUCCESS>(state).status;
-            goto exit;
+
+            INSTR_IMPL(OP_RETURN);
+
         case OP_DELEGATECALL:
         {
             const auto status_code = call<EVMC_DELEGATECALL>(state);
@@ -747,9 +756,9 @@ evmc_result execute(const VM& vm, ExecutionState& state, const CodeAnalysis& ana
             }
             DISPATCH_NEXT();
         }
-        case OP_REVERT:
-            state.status = return_<EVMC_REVERT>(state).status;
-            goto exit;
+
+            INSTR_IMPL(OP_REVERT);
+
         case OP_INVALID:
             state.status = invalid(state).status;
             goto exit;
