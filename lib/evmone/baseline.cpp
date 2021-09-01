@@ -6,6 +6,7 @@
 #include "baseline_instruction_table.hpp"
 #include "execution_state.hpp"
 #include "instructions.hpp"
+#include "instructions_op2fn.hpp"
 #include "vm.hpp"
 #include <evmc/instructions.h>
 #include <memory>
@@ -77,6 +78,33 @@ inline evmc_status_code check_requirements(
     ++code_it;          \
     DISPATCH()
 
+template <typename InstrFn>
+evmc_status_code invoke(InstrFn instr_fn, ExecutionState& state) noexcept = delete;
+
+template <>
+[[gnu::always_inline]] inline evmc_status_code invoke<decltype(&add)>(
+    decltype(&add) instr_fn, ExecutionState& state) noexcept
+{
+    instr_fn(state);
+    return EVMC_SUCCESS;
+}
+
+template <>
+[[gnu::always_inline]] inline evmc_status_code invoke<decltype(&exp)>(
+    decltype(&exp) instr_fn, ExecutionState& state) noexcept
+{
+    const auto status = instr_fn(state);
+    if (status != EVMC_SUCCESS)
+        state.status = status;
+    return status;
+}
+
+#define INSTR_IMPL(OPCODE)                                \
+    case OPCODE:                                          \
+        if (invoke(op2fn::OPCODE, state) != EVMC_SUCCESS) \
+            goto exit;                                    \
+        DISPATCH_NEXT()
+
 template <bool TracingEnabled>
 evmc_result execute(const VM& vm, ExecutionState& state, const CodeAnalysis& analysis) noexcept
 {
@@ -116,9 +144,9 @@ evmc_result execute(const VM& vm, ExecutionState& state, const CodeAnalysis& ana
             stop(state);
             state.status = EVMC_SUCCESS;  // Not needed, but does some magic to clang optimization.
             goto exit;
-        case OP_ADD:
-            add(state);
-            DISPATCH_NEXT();
+
+            INSTR_IMPL(OP_ADD);
+
         case OP_MUL:
             mul(state);
             DISPATCH_NEXT();
@@ -143,19 +171,9 @@ evmc_result execute(const VM& vm, ExecutionState& state, const CodeAnalysis& ana
         case OP_MULMOD:
             mulmod(state);
             DISPATCH_NEXT();
-        case OP_EXP:
-        {
-            const auto status_code = exp(state);
-            if (status_code != EVMC_SUCCESS)
-            {
-                state.status = status_code;
-                goto exit;
-            }
-            DISPATCH_NEXT();
-        }
-        case OP_SIGNEXTEND:
-            signextend(state);
-            DISPATCH_NEXT();
+
+            INSTR_IMPL(OP_EXP);
+            INSTR_IMPL(OP_SIGNEXTEND);
 
         case OP_LT:
             lt(state);
