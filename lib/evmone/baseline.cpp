@@ -739,13 +739,8 @@ evmc_result execute(const VM& vm, ExecutionState& state, const CodeAnalysis& ana
         }
 
             INSTR_IMPL(OP_REVERT);
-
-        case OP_INVALID:
-            state.status = invalid(state).status;
-            goto exit;
-        case OP_SELFDESTRUCT:
-            state.status = selfdestruct(state).status;
-            goto exit;
+            INSTR_IMPL(OP_INVALID);
+            INSTR_IMPL(OP_SELFDESTRUCT);
         default:
             INTX_UNREACHABLE();
         }
