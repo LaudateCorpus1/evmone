@@ -79,40 +79,43 @@ inline evmc_status_code check_requirements(
     DISPATCH()
 
 template <typename InstrFn>
-evmc_status_code invoke(InstrFn instr_fn, ExecutionState& state) noexcept = delete;
+const uint8_t* invoke(InstrFn instr_fn, ExecutionState& state, const uint8_t* pc) noexcept = delete;
 
 template <>
-[[gnu::always_inline]] inline evmc_status_code invoke<decltype(&add)>(
-    decltype(&add) instr_fn, ExecutionState& state) noexcept
+[[gnu::always_inline]] inline const uint8_t* invoke<decltype(&add)>(
+    decltype(&add) instr_fn, ExecutionState& state, const uint8_t* pc) noexcept
 {
     instr_fn(state);
-    return EVMC_SUCCESS;
+    return pc + 1;
 }
 
 template <>
-[[gnu::always_inline]] inline evmc_status_code invoke<decltype(&exp)>(
-    decltype(&exp) instr_fn, ExecutionState& state) noexcept
+[[gnu::always_inline]] inline const uint8_t* invoke<decltype(&exp)>(
+    decltype(&exp) instr_fn, ExecutionState& state, const uint8_t* pc) noexcept
 {
     const auto status = instr_fn(state);
     if (status != EVMC_SUCCESS)
+    {
         state.status = status;
-    return status;
+        return nullptr;
+    }
+    return pc + 1;
 }
 
 template <>
-[[gnu::always_inline]] inline evmc_status_code invoke<decltype(&stop)>(
-    decltype(&stop) instr_fn, ExecutionState& state) noexcept
+[[gnu::always_inline]] inline const uint8_t* invoke<decltype(&stop)>(
+    decltype(&stop) instr_fn, ExecutionState& state, [[maybe_unused]] const uint8_t* pc) noexcept
 {
     const auto token = instr_fn(state);
     state.status = token.status;
-    return EVMC_FAILURE;  // Terminate loop with any code other than SUCCESS.
+    return nullptr;
 }
 
-#define INSTR_IMPL(OPCODE)                                \
-    case OPCODE:                                          \
-        if (invoke(op2fn::OPCODE, state) != EVMC_SUCCESS) \
-            goto exit;                                    \
-        DISPATCH_NEXT()
+#define INSTR_IMPL(OPCODE)                                             \
+    case OPCODE:                                                       \
+        if (code_it = invoke(op2fn::OPCODE, state, code_it); !code_it) \
+            goto exit;                                                 \
+        DISPATCH()
 
 template <bool TracingEnabled>
 evmc_result execute(const VM& vm, ExecutionState& state, const CodeAnalysis& analysis) noexcept
