@@ -404,9 +404,7 @@ evmc_result execute(const VM& vm, ExecutionState& state, const CodeAnalysis& ana
             DISPATCH();
         }
 
-        case OP_PC:
-            code_it = pc(state, code_it);
-            DISPATCH();
+            INSTR_IMPL(OP_PC);
 
         case OP_MSIZE:
             msize(state);
