@@ -388,13 +388,7 @@ evmc_result execute(const VM& vm, ExecutionState& state, const CodeAnalysis& ana
             DISPATCH_NEXT();
         }
 
-        case OP_JUMP:
-        {
-            code_it = jump(state, code_it);
-            if (code_it == nullptr)
-                goto exit;
-            DISPATCH();
-        }
+            INSTR_IMPL(OP_JUMP);
 
         case OP_JUMPI:
         {
@@ -403,6 +397,7 @@ evmc_result execute(const VM& vm, ExecutionState& state, const CodeAnalysis& ana
                 goto exit;
             DISPATCH();
         }
+
 
             INSTR_IMPL(OP_PC);
 
