@@ -103,6 +103,13 @@ template <>
 }
 
 template <>
+[[gnu::always_inline]] inline const uint8_t* invoke<decltype(&push<1>)>(
+    decltype(&push<1>) instr_fn, ExecutionState& state, const uint8_t* pc) noexcept
+{
+    return instr_fn(state, pc);
+}
+
+template <>
 [[gnu::always_inline]] inline const uint8_t* invoke<decltype(&stop)>(
     decltype(&stop) instr_fn, ExecutionState& state, [[maybe_unused]] const uint8_t* pc) noexcept
 {
@@ -431,102 +438,38 @@ evmc_result execute(const VM& vm, ExecutionState& state, const CodeAnalysis& ana
             jumpdest(state);
             DISPATCH_NEXT();
 
-        case OP_PUSH1:
-            code_it = push<1>(state, code_it);
-            DISPATCH();
-        case OP_PUSH2:
-            code_it = push<2>(state, code_it);
-            DISPATCH();
-        case OP_PUSH3:
-            code_it = push<3>(state, code_it);
-            DISPATCH();
-        case OP_PUSH4:
-            code_it = push<4>(state, code_it);
-            DISPATCH();
-        case OP_PUSH5:
-            code_it = push<5>(state, code_it);
-            DISPATCH();
-        case OP_PUSH6:
-            code_it = push<6>(state, code_it);
-            DISPATCH();
-        case OP_PUSH7:
-            code_it = push<7>(state, code_it);
-            DISPATCH();
-        case OP_PUSH8:
-            code_it = push<8>(state, code_it);
-            DISPATCH();
-        case OP_PUSH9:
-            code_it = push<9>(state, code_it);
-            DISPATCH();
-        case OP_PUSH10:
-            code_it = push<10>(state, code_it);
-            DISPATCH();
-        case OP_PUSH11:
-            code_it = push<11>(state, code_it);
-            DISPATCH();
-        case OP_PUSH12:
-            code_it = push<12>(state, code_it);
-            DISPATCH();
-        case OP_PUSH13:
-            code_it = push<13>(state, code_it);
-            DISPATCH();
-        case OP_PUSH14:
-            code_it = push<14>(state, code_it);
-            DISPATCH();
-        case OP_PUSH15:
-            code_it = push<15>(state, code_it);
-            DISPATCH();
-        case OP_PUSH16:
-            code_it = push<16>(state, code_it);
-            DISPATCH();
-        case OP_PUSH17:
-            code_it = push<17>(state, code_it);
-            DISPATCH();
-        case OP_PUSH18:
-            code_it = push<18>(state, code_it);
-            DISPATCH();
-        case OP_PUSH19:
-            code_it = push<19>(state, code_it);
-            DISPATCH();
-        case OP_PUSH20:
-            code_it = push<20>(state, code_it);
-            DISPATCH();
-        case OP_PUSH21:
-            code_it = push<21>(state, code_it);
-            DISPATCH();
-        case OP_PUSH22:
-            code_it = push<22>(state, code_it);
-            DISPATCH();
-        case OP_PUSH23:
-            code_it = push<23>(state, code_it);
-            DISPATCH();
-        case OP_PUSH24:
-            code_it = push<24>(state, code_it);
-            DISPATCH();
-        case OP_PUSH25:
-            code_it = push<25>(state, code_it);
-            DISPATCH();
-        case OP_PUSH26:
-            code_it = push<26>(state, code_it);
-            DISPATCH();
-        case OP_PUSH27:
-            code_it = push<27>(state, code_it);
-            DISPATCH();
-        case OP_PUSH28:
-            code_it = push<28>(state, code_it);
-            DISPATCH();
-        case OP_PUSH29:
-            code_it = push<29>(state, code_it);
-            DISPATCH();
-        case OP_PUSH30:
-            code_it = push<30>(state, code_it);
-            DISPATCH();
-        case OP_PUSH31:
-            code_it = push<31>(state, code_it);
-            DISPATCH();
-        case OP_PUSH32:
-            code_it = push<32>(state, code_it);
-            DISPATCH();
+            INSTR_IMPL(OP_PUSH1);
+            INSTR_IMPL(OP_PUSH2);
+            INSTR_IMPL(OP_PUSH3);
+            INSTR_IMPL(OP_PUSH4);
+            INSTR_IMPL(OP_PUSH5);
+            INSTR_IMPL(OP_PUSH6);
+            INSTR_IMPL(OP_PUSH7);
+            INSTR_IMPL(OP_PUSH8);
+            INSTR_IMPL(OP_PUSH9);
+            INSTR_IMPL(OP_PUSH10);
+            INSTR_IMPL(OP_PUSH11);
+            INSTR_IMPL(OP_PUSH12);
+            INSTR_IMPL(OP_PUSH13);
+            INSTR_IMPL(OP_PUSH14);
+            INSTR_IMPL(OP_PUSH15);
+            INSTR_IMPL(OP_PUSH16);
+            INSTR_IMPL(OP_PUSH17);
+            INSTR_IMPL(OP_PUSH18);
+            INSTR_IMPL(OP_PUSH19);
+            INSTR_IMPL(OP_PUSH20);
+            INSTR_IMPL(OP_PUSH21);
+            INSTR_IMPL(OP_PUSH22);
+            INSTR_IMPL(OP_PUSH23);
+            INSTR_IMPL(OP_PUSH24);
+            INSTR_IMPL(OP_PUSH25);
+            INSTR_IMPL(OP_PUSH26);
+            INSTR_IMPL(OP_PUSH27);
+            INSTR_IMPL(OP_PUSH28);
+            INSTR_IMPL(OP_PUSH29);
+            INSTR_IMPL(OP_PUSH30);
+            INSTR_IMPL(OP_PUSH31);
+            INSTR_IMPL(OP_PUSH32);
 
         case OP_DUP1:
             dup<1>(state);
