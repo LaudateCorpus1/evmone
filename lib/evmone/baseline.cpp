@@ -93,6 +93,10 @@ static_assert(std::is_same_v<decltype(add), InstrFn1>);
 using InstrFn2 = evmc_status_code(ExecutionState&) noexcept;
 static_assert(std::is_same_v<decltype(exp), InstrFn2>);
 
+/// The signature of terminating instructions.
+using InstrFn3 = StopToken(ExecutionState&) noexcept;
+static_assert(std::is_same_v<decltype(stop), InstrFn3>);
+
 /// A helper to invoke instruction implementations of different signatures
 /// done by template specialization.
 template <typename InstrFn>
@@ -118,6 +122,13 @@ template <>
     return pos + 1;
 }
 
+template <>
+[[gnu::always_inline]] inline code_iterator invoke<InstrFn3*>(
+    InstrFn3* instr_fn, ExecutionState& state, code_iterator /*pos*/) noexcept
+{
+    state.status = instr_fn(state).status;
+    return nullptr;
+}
 
 template <bool TracingEnabled>
 evmc_result execute(const VM& vm, ExecutionState& state, const CodeAnalysis& analysis) noexcept
@@ -154,11 +165,7 @@ evmc_result execute(const VM& vm, ExecutionState& state, const CodeAnalysis& ana
 
         switch (op)
         {
-        case OP_STOP:
-            stop(state);
-            state.status = EVMC_SUCCESS;  // Not needed, but does some magic to clang optimization.
-            goto exit;
-
+            DISPATCH_CASE(OP_STOP);
             DISPATCH_CASE(OP_ADD);
             DISPATCH_CASE(OP_MUL);
             DISPATCH_CASE(OP_SUB);
@@ -713,9 +720,9 @@ evmc_result execute(const VM& vm, ExecutionState& state, const CodeAnalysis& ana
             }
             DISPATCH_NEXT();
         }
-        case OP_RETURN:
-            state.status = return_<EVMC_SUCCESS>(state).status;
-            goto exit;
+
+            DISPATCH_CASE(OP_RETURN);
+
         case OP_DELEGATECALL:
         {
             const auto status_code = call<EVMC_DELEGATECALL>(state);
@@ -746,15 +753,11 @@ evmc_result execute(const VM& vm, ExecutionState& state, const CodeAnalysis& ana
             }
             DISPATCH_NEXT();
         }
-        case OP_REVERT:
-            state.status = return_<EVMC_REVERT>(state).status;
-            goto exit;
-        case OP_INVALID:
-            state.status = invalid(state).status;
-            goto exit;
-        case OP_SELFDESTRUCT:
-            state.status = selfdestruct(state).status;
-            goto exit;
+
+            DISPATCH_CASE(OP_REVERT);
+            DISPATCH_CASE(OP_INVALID);
+            DISPATCH_CASE(OP_SELFDESTRUCT);
+
         default:
             INTX_UNREACHABLE();
         }
